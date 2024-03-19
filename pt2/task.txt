@@ -1,0 +1,32 @@
+python3 Sender2.py <RemoteHost> <Port> <Filename> <RetryTimeout>
+<RemoteHost> is the IP address or host name for the corresponding receiver.
+    Note that if both sender and receiver run on the same machine, <RemoteHost>
+    can be specified as either 127.0.0.1 or localhost.
+<Port> is the port number used by the receiver.
+<Filename> is the file to transfer.
+<RetryTimeout> should be a positive integer, representing retransmission
+timeout se ing in milliseconds.
+
+Using a 5% packet loss rate while leaving the rest of TC config same
+(i.e., 10Mbps bandwidth and 5ms one-way propagation delay)
+experiment with different retransmission timeouts to measure the
+corresponding number of retransmissions and throughput. 
+
+Tabulate your observations in the space provided under Question 1
+in the worksheet (included with the git repository). 
+
+For this, your sender implementation should count the 
+number of retransmissions and measure average throughput (in KB/s), 
+which is defined as the ratio of file size (in KB) 
+to the transfer time (in seconds). 
+
+Transfer time in turn can be measured at the sender as the
+interval between first message transmission time and acknowledgement 
+receipt time for last message. Before the sender application finishes 
+and quits, print the average throughput value to the standard output.
+
+Then for Question 2 in the worksheet, discuss the impact of retransmission timeout on
+the number of retransmissions and throughput. Also indicate the optimal timeout value
+from a communication efficiency viewpoint (i.e., the timeout that minimizes the number
+of retransmissions while ensuring a high throughput). Please clearly explain your
+observations.
