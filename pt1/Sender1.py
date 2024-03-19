@@ -5,6 +5,7 @@
 
 #  python3 Sender1.py <RemoteHost> <Port> <Filename>
 import socket
+import time
 
 msg_size = 1027 # bytes (3B header + 1024B data)
 # header - 2B seq number, 1B end-of-file EoF flag
@@ -26,6 +27,7 @@ class Sender:
         ###
         packet = header + data
         self.sock.sendto(packet, self.address)
+        time.sleep(0.01)
     
     def send_file(self, filename):
         with open(filename, 'rb') as fbytes:

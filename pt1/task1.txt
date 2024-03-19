@@ -1,0 +1,22 @@
+configured with 10Mbps bandwidth, 5ms one-way propagation
+delay and 0% packet loss rate
+total roundtrip propagation delay is 10ms
+
+to add:
+    sudo tc qdisc add dev lo root netem loss 0.5% delay 10ms rate 5mbit
+
+to remove:
+    sudo tc qdisc del dev lo root
+
+
+python3 Sender1.py <RemoteHost> <Port> <Filename>
+<RemoteHost> is the IP address or host name for the corresponding receiver.
+    Note that if both sender and receiver run on the same machine
+    <RemoteHost> can be specified as either 127.0.0.1 or localhost.
+<Port> is the port number used by the receiver.
+<Filename> is the file to transfer
+
+python3 Receiver1.py <Port> <Filename>
+<Port> is the port number which the receiver will use for receiving messages from
+the sender.
+<Filename> is the name to use for the received file to save on the local disk
