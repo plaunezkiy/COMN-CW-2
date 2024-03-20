@@ -35,8 +35,7 @@ class Sender:
         EOF = eof.to_bytes(1, 'big')
         header = SEQ_NUMBER + EOF
         packet = header + data
-        print(data[:10])
-        
+                
         # send/resend packet loop (waiting for ACK)
         pkt_retransmissions = 0
         while True:

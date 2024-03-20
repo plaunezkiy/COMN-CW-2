@@ -42,8 +42,6 @@ class Receiver:
                     seq_number = int.from_bytes(header[:2], 'big')
                     eof = bool.from_bytes(header[-1:], 'big')
                     payload = data[3:]
-                    print(payload[:10])
-                    exit()
                     # deliver data
                     file.write(payload)
                     # send ACK
