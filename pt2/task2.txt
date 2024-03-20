@@ -1,11 +1,16 @@
 python3 Sender2.py <RemoteHost> <Port> <Filename> <RetryTimeout>
-<RemoteHost> is the IP address or host name for the corresponding receiver.
-    Note that if both sender and receiver run on the same machine, <RemoteHost>
-    can be specified as either 127.0.0.1 or localhost.
-<Port> is the port number used by the receiver.
-<Filename> is the file to transfer.
-<RetryTimeout> should be a positive integer, representing retransmission
-timeout se ing in milliseconds.
+    <RemoteHost> is the IP address or host name for the corresponding receiver.
+        Note that if both sender and receiver run on the same machine, <RemoteHost>
+        can be specified as either 127.0.0.1 or localhost.
+    <Port> is the port number used by the receiver.
+    <Filename> is the file to transfer.
+    <RetryTimeout> should be a positive integer, representing retransmission
+        timeout in milliseconds.
+
+ python3 Receiver2.py <Port> <Filename>
+    <Port> is the port number which the receiver will use for receiving messages 
+    from the sender.
+    <Filename> is the name to use for the received file to save on the local disk
 
 Using a 5% packet loss rate while leaving the rest of TC config same
 (i.e., 10Mbps bandwidth and 5ms one-way propagation delay)

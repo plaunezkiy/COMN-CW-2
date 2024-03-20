@@ -1,6 +1,4 @@
-# python3 Receiver1.py <Port> <Filename>
-# receiver should timeout at some point if no response is received
-# timeouts are in millisecodns
+# Nikita Peleshatyi 2150635
 import socket
 
 class Receiver:

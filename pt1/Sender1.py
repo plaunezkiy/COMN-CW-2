@@ -1,14 +1,8 @@
-# Implement sender and receiver endpoints for transferring a large file given (test.jpg) 
-# from the sender to the receiver on localhost over UDP as
-# a sequence of small messages with 1KB maximum payload (NB. 1KB = 1024 bytes) via
-# the loopback interface
-
-#  python3 Sender1.py <RemoteHost> <Port> <Filename>
+# Nikita Peleshatyi 2150635
 import socket
 import time
 
-msg_size = 1027 # bytes (3B header + 1024B data)
-# header - 2B seq number, 1B end-of-file EoF flag
+
 class Sender:
     PACKET_DATA_SIZE = 1024
     address = None
@@ -27,7 +21,7 @@ class Sender:
         ###
         packet = header + data
         self.sock.sendto(packet, self.address)
-        time.sleep(0.01)
+        time.sleep(0.001)
     
     def send_file(self, filename):
         with open(filename, 'rb') as fbytes:
