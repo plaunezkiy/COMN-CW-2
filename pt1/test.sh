@@ -11,6 +11,6 @@ RECEIVER_FNAME="recv.jpg"
 python3 Receiver1.py $PORT $SENDER_FNAME &
 python3 Sender1.py $RECEIVER $PORT $RECEIVER_FNAME &
 
-echo diff $SENDER_FNAME $RECEIVER_FNAME
+echo $(diff $SENDER_FNAME $RECEIVER_FNAME)
 # clear network settings
 sudo tc qdisc del dev lo root

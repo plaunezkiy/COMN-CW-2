@@ -1,0 +1,24 @@
+python3 Sender3.py <RemoteHost> <Port> <Filename> <RetryTimeout> <WindowSize>
+    <RemoteHost> is the IP address or host name for the corresponding receiver.
+    Note that if both sender and receiver run on the same machine, <RemoteHost>
+    can be specified as either 127.0.0.1 or localhost.
+    <Port> is the port number used by the receiver.
+    <Filename> is the file to transfer.
+    <RetryTimeout> should be a positive integer, representing retransmission
+    timeout in milliseconds.
+    <WindowSize> should be a positive integer.
+
+python3 Receiver3.py <Port> <Filename>
+    <Port> is the port number which the receiver will use for receiving messages from
+    the sender.
+    <Filename> is the name to use for the received file to save on the local
+    disk. For example: python3 Receiver3.py 54321 rfile
+
+Experiment with:
+    different window sizes at the sender (increasing in powers of 2 starting from 1) 
+    and different one-way propagation delay values (5ms, 25ms and 100ms). For
+the 5ms case, use the “optimal” value for the retransmission timeout identified from
+part 2. The timeout values for the other two cases should be justified clearly. Across all
+these experiments, use the following values for the other TC parameters: 10Mbps
+bandwidth and 5% packet loss rate in each direction. Tabulate your results under
+Question 3 and answer Question 4 in the results sheet

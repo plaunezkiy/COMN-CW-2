@@ -19,7 +19,7 @@ for RETRY_TIMEOUT in ${TIMEOUTS[@]}; do
         python3 Receiver2.py $PORT $RECEIVER_FNAME &
 
         STATS=$(python3 Sender2.py $RECEIVER $PORT $SENDER_FNAME $RETRY_TIMEOUT | tail -1)
-        echo $STATS
+        echo "${run}. ${STATS}"
         printf "${run}. ${STATS}\n" >> $OUTPUT_FILE
         sleep 1
         echo $(diff $SENDER_FNAME $RECEIVER_FNAME )

@@ -54,7 +54,7 @@ class Sender:
                     print("No EoF ACK received after 10 retries, terminating...", file=sys.stderr)
                     break
                 pkt_retransmissions += 1
-                print(f"Resend: {seq_number}", file=sys.stderr)
+                # print(f"Resend: {seq_number}", file=sys.stderr)
                 continue
         self.retransmissions += pkt_retransmissions
     
