@@ -2,6 +2,8 @@
 import socket
 import time
 import sys
+import errno
+import select
 
 
 class Sender:
@@ -16,6 +18,7 @@ class Sender:
         # print(f"Sending to {self.address}")
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.settimeout(retry_timeout/1000)
+        self.sock.setblocking(False)
         # enable immediate address reusage (for sending+receiving)
         # self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         # self.sock.bind(self.address)
@@ -29,12 +32,19 @@ class Sender:
         return data
     
     def compose_and_send_packet(self, seq_number: int, data: bytes, eof: bool=False):
+        print(f"Sending: {seq_number}")
         # compose packet
         SEQ_NUMBER = seq_number.to_bytes(self.ACK_SIZE, 'big')
         EOF = eof.to_bytes(1, 'big')
         header = SEQ_NUMBER + EOF
         packet = header + data
-        self.sock.sendto(packet, self.address)
+        
+        try:
+            self.sock.sendto(packet, self.address)
+        except socket.error as e:
+            if e.errno != errno.EAGAIN:
+                raise e
+            select.select([], [self.sock], [])
     
     # def send_data(self, data):
     #     return
@@ -52,7 +62,8 @@ class Sender:
             # 
             start = time.time()
             while not eof:
-                while seq_counter < base + self.window_size:
+                readable, writable, _ = select.select([self.sock], [self.sock], [], 0)
+                while seq_counter <= base + self.window_size:
                     # print(seq_counter, file=sys.stderr)
                     start = seq_counter * self.PACKET_DATA_SIZE
                     chunk = file_data[start : start+self.PACKET_DATA_SIZE]
@@ -69,11 +80,12 @@ class Sender:
                         break
                     # next chunk
                     seq_counter += 1
-                try:
-                    pckt, addr = self.sock.recvfrom(self.ACK_SIZE)
-                    base = self.get_ack_seq_num(pckt)
-                except socket.timeout:
-                    seq_counter = base + 1
+                if self.sock in readable:
+                    try:
+                        pckt, addr = self.sock.recvfrom(self.ACK_SIZE)
+                        base = self.get_ack_seq_num(pckt)
+                    except socket.timeout:
+                        seq_counter = base + 1
         runtime = end - start
         # print(runtime, fsize/1000)
         throughput = (fsize / 1000) / runtime

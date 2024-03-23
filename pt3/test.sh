@@ -3,7 +3,7 @@ OUTPUT_FILE="data.txt"
 # clear network settings
 sudo tc qdisc del dev lo root
 # set network settings
-sudo tc qdisc add dev lo root netem loss 5% delay 10ms rate 5mbit
+sudo tc qdisc add dev lo root netem loss 100% delay 10ms rate 5mbit
 
 RECEIVER="127.0.0.1"
 PORT=5005
