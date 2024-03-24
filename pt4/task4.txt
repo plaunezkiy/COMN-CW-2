@@ -1,0 +1,37 @@
+python3 Sender4.py <RemoteHost> <Port> <Filename> <RetryTimeout>
+<WindowSize>
+    <RemoteHost> is the IP address or host name for the corresponding receiver.
+    Note that if both sender and receiver run on the same machine, <RemoteHost>
+    can be specified as either 127.0.0.1 or localhost.
+    <Port> is the port number used by the receiver.
+    <Filename> is the file to transfer.
+    <RetryTimeout> should be a positive integer, representing the retransmission
+    timeout in the milliseconds.
+    <WindowSize> should be a positive integer.
+
+python3 Receiver4.py <Port> <Filename> <WindowSize>
+    <Port> is the port number which the receiver will use for receiving messages from
+    the sender.
+    <Filename> is the name to use for the received file to save on the local disk.
+    <WindowSize> should be a positive integer.
+
+By configuring the TC link with:
+    10Mbps bandwidth, 25ms one-way delay, 5% packet loss rate
+    experiment with different window size values and complete
+    the table under Question 5 and answer Question 6 in the worksheet.
+
+As another step in this part, also carry out an equivalent experiment 
+using iperf with TCP within your COMN coursework VM, 
+i.e., both iperf client and server running inside it. 
+Use –M option in iperf to set the maximum segment size to 1KB 
+and vary the TCP window sizes using the –w option. 
+Note that iperf actually allocates twice the specified value, 
+and uses the additional buffer for administrative purposes and 
+internal kernel structures. But this is normal because 
+effectively TCP uses the value specified as the window size 
+for the session, which is the parameter to be varied in this experiment. 
+You also need to specify the file to be transferred as one of 
+the parameters to iperf on the client side (-F option). 
+In addition, you should use the –t option as well. Use the results of 
+this experiment to complete the table under Question 7 and 
+answer Question 8 in the worksheet.

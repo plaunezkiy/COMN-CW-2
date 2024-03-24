@@ -14,12 +14,11 @@ class Receiver:
     def buffsize(self):
         return self.PACKET_DATA_SIZE + self.PACKET_HEADER_SIZE
 
-    def __init__(self, host="127.0.0.1", port=5005):
+    def __init__(self, host="127.0.0.1", port=5005, window_size=1):
         self.address = (host, port)
-        # print(f"Listening on {self.address}")
+        self.window_size = window_size
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.bind(self.address)
-        # self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     
     def make_ack_packet(self, seq_number: int):
         return seq_number.to_bytes(self.ACK_SIZE, 'big')
@@ -33,7 +32,12 @@ class Receiver:
         return data
     
     def receive_file(self, filename):
-        prev_seq_number = -1
+        pkts_received = set()
+        base = -1
+        eof = False
+        fuck = True
+        # keys are seq_nums, values are packet payload
+        window_buffer = {}
         with open(filename, "wb") as file:
             while True:
                 data, addr = self.sock.recvfrom(self.buffsize)
@@ -42,21 +46,34 @@ class Receiver:
                     header = data[:3]
                     seq_number = int.from_bytes(header[:2], 'big')
                     eof = bool.from_bytes(header[-1:], 'big')
-                    if seq_number == prev_seq_number + 1:
-                        prev_seq_number += 1
-                        print(f"Recevied: {seq_number}", file=sys.stderr)
+                    # in order
+                    if base < seq_number <= base + self.window_size:                    
+                        print(window_buffer.keys(), file=sys.stderr)
+                        print(f"Received & Buffered: {seq_number}", file=sys.stderr)
                         payload = data[3:]
-                        # deliver data
-                        file.write(payload)
+                        if seq_number != 0:
+                            fuck = False
+                        if fuck:
+                            continue
+                        if seq_number not in pkts_received:
+                            pkts_received.add(seq_number)
+                            window_buffer[seq_number] = payload
+                    # deliver data if available
+                    while base + 1 in window_buffer.keys():
+                        print(f"Delivered: {base+1}", file=sys.stderr)
+                        file.write(window_buffer[base + 1])
+                        del window_buffer[base + 1]
+                        base += 1                       
                     # send ACK
                     self.send_ack(seq_number, addr)
-                    if eof:
+                    if eof and len(window_buffer) == 0:
                         break
 
 
 # Port, Filename
 port = int(sys.argv[1])
 fname = sys.argv[2]
+window_size = int(sys.argv[3])
 
-receiver = Receiver(port=port)
+receiver = Receiver(port=port, window_size=window_size)
 receiver.receive_file(fname)
