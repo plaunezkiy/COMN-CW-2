@@ -34,6 +34,7 @@ class Receiver:
     
     def receive_file(self, filename):
         prev_seq_number = -1
+        eof = False
         with open(filename, "wb") as file:
             while True:
                 data, addr = self.sock.recvfrom(self.buffsize)
@@ -41,16 +42,23 @@ class Receiver:
                     # parse data
                     header = data[:3]
                     seq_number = int.from_bytes(header[:2], 'big')
-                    eof = bool.from_bytes(header[-1:], 'big')
                     if seq_number == prev_seq_number + 1:
                         prev_seq_number += 1
-                        print(f"Recevied: {seq_number}", file=sys.stderr)
+                        # print(f"Recevied: {seq_number}", file=sys.stderr)
                         payload = data[3:]
+                        eof = bool.from_bytes(header[-1:], 'big')
+                        # print(seq_number, eof, file=sys.stderr)
                         # deliver data
                         file.write(payload)
+                    # to make sure the first packet is always 0
+                    if prev_seq_number == -1:
+                        continue
                     # send ACK
-                    self.send_ack(seq_number, addr)
+                    self.send_ack(prev_seq_number, addr)
                     if eof:
+                        # print("Terminating", file=sys.stderr)
+                        # send another one just in case
+                        self.send_ack(prev_seq_number, addr)
                         break
 
 

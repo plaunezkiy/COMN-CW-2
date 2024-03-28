@@ -2,7 +2,6 @@
 import socket
 import time
 import sys
-import errno
 import select
 
 
@@ -29,7 +28,7 @@ class Sender:
         return data
     
     def compose_and_send_packet(self, seq_number: int, data: bytes, eof: bool=False):
-        print(f"Sending: {seq_number}", file=sys.stderr)
+        # print(f"Sending: {seq_number}", file=sys.stderr)
         # compose packet
         SEQ_NUMBER = seq_number.to_bytes(self.ACK_SIZE, 'big')
         EOF = eof.to_bytes(1, 'big')
@@ -43,6 +42,7 @@ class Sender:
         with open(filename, 'rb') as fbytes:
             file_data = fbytes.read()
             fsize = len(file_data)
+            num_packets = (fsize // self.PACKET_DATA_SIZE) + (fsize % self.PACKET_DATA_SIZE != 0)
             # 
             seq_counter = 0
             eof = False
@@ -50,11 +50,11 @@ class Sender:
             next_ack_num = 0
             timer = None
             # 
-            start = time.time()
+            start_timer = time.time()
             while not eof:
                 readable, writable, _ = select.select([self.sock], [self.sock], [], self.timeout)
-                #                        -1          5
-                while seq_counter <= base + self.window_size: # and self.sock in writable:
+                # if there's room, send more packets
+                while seq_counter <= base + self.window_size and seq_counter <= num_packets and self.sock in writable:
                     if base == seq_counter - 1:
                         timer = time.time()
 
@@ -63,21 +63,21 @@ class Sender:
                     chunk = file_data[start : start+self.PACKET_DATA_SIZE]
                     # seq number is limited to 2 bytes, which is FF_FF = 256^2 = 65536
                     R_SEQ_NUMBER = seq_counter % (256 ** self.ACK_SIZE)
-                    # final chunk will have less than 1024B of data
-                    # if reached the end, send EoF packet
-                    if len(chunk) < self.PACKET_DATA_SIZE:
-                        eof = True
-                    self.compose_and_send_packet(R_SEQ_NUMBER, chunk, eof)
-                    if eof:
-                        end = time.time()
-                        break
+                    self.compose_and_send_packet(R_SEQ_NUMBER, chunk, seq_counter==num_packets)
                     # next chunk
                     seq_counter += 1
+                # try receiving acks
                 if self.sock in readable:
                     pckt, addr = self.sock.recvfrom(self.ACK_SIZE)
                     ack_num = self.get_ack_seq_num(pckt)
-                    print(f"ACK: {ack_num}", file=sys.stderr)
+                    # print(f"ACK: {ack_num}", file=sys.stderr)
                     if ack_num >= next_ack_num:
+                        # if received final packet: terminate
+                        if ack_num == num_packets:
+                            eof = True
+                            end_timer = time.time()
+                            break
+
                         next_ack_num = ack_num + 1
                         base = ack_num
                         # if no other packets have been sent beyond seq_number, clear timer
@@ -89,15 +89,14 @@ class Sender:
                 if timer and time.time() - timer >= self.timeout:
                     seq_counter = base + 1
                     timer = None
-                    print(f"Timing out, base: {seq_counter}", file=sys.stderr)
+                    # print(f"Timing out, base: {seq_counter}", file=sys.stderr)
                 
-        runtime = end - start
-        # print(runtime, fsize/1000)
+        runtime = end_timer - start_timer
         throughput = (fsize / 1000) / runtime
-        print(f"{runtime}#{self.retransmissions}#{throughput}")
+        print(f"{throughput}")
 
 
-# RemoteHost, Port, Filename, Timeout
+# RemoteHost, Port, Filename, Timeout, WindowSize
 host = sys.argv[1]
 port = int(sys.argv[2])
 fname = sys.argv[3]

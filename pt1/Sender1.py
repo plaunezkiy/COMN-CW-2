@@ -11,8 +11,6 @@ class Sender:
     def __init__(self, host="127.0.0.1", port=5005):
         self.address = (host, port)
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        # self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        # self.sock.bind((host, port))
     
     def compose_and_send_packet(self, seq_number: int, data: bytes, eof: bool=False):
         SEQ_NUMBER = seq_number.to_bytes(2, 'big')
@@ -34,7 +32,6 @@ class Sender:
                     self.compose_and_send_packet(seq_counter, chunk, True)
                     break
                 self.compose_and_send_packet(seq_counter, chunk)
-                # exit()
                 # next chunk
                 seq_counter += 1
 

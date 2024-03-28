@@ -2,7 +2,6 @@
 import socket
 import time
 import sys
-import errno
 import select
 
 
@@ -39,12 +38,12 @@ class Sender:
         return data
     
     def compose_and_send_packet(self, seq_number: int):
-        print(f"Sending: {seq_number}", file=sys.stderr)
         # compose packet
         R_SEQ_NUMBER = seq_number % self.max_seq_number
         SEQ_NUMBER = R_SEQ_NUMBER.to_bytes(self.ACK_SIZE, 'big')
         eof = seq_number == self.num_packets
         EOF = eof.to_bytes(1, 'big')
+        # print(f"Sending: {seq_number} {eof}", file=sys.stderr)
         header = SEQ_NUMBER + EOF
         start = seq_number * self.PACKET_DATA_SIZE
         # seq number is limited to 2 bytes, which is FF_FF = 256^2 = 65536
@@ -62,51 +61,55 @@ class Sender:
             base = -1
             acks_received = set()
             timers = {}
+            retransmissions = {}
             window = []
             # 
             start = time.time()
             
-            while seq_counter <= self.num_packets:
+            while base <= self.num_packets:
                 readable, writable, _ = select.select([self.sock], [self.sock], [], self.timeout)
-                #                        -1          5
-                while seq_counter <= base + self.window_size: # and self.sock in writable:
-                    print(len(window))
-                    # if base == seq_counter - 1:
-                    #     timer = time.time()
+
+                while seq_counter <= base + self.window_size and seq_counter <= self.num_packets: # and self.sock in writable:
                     self.compose_and_send_packet(seq_counter)
                     timers[seq_counter] = time.time()
+                    retransmissions[seq_counter] = 0
                     window.append(seq_counter)
-                    # eof
-                    if seq_counter == self.num_packets:
-                        end = time.time()
                     # next chunk
                     seq_counter += 1
                 if self.sock in readable:
                     pckt, addr = self.sock.recvfrom(self.ACK_SIZE)
                     ack_num = self.get_ack_seq_num(pckt)
-                    print(f"ACK: {ack_num}", file=sys.stderr)
+                    # print(f"ACK: {ack_num}", file=sys.stderr)
                     timers[ack_num] = None
                     # add to acks
                     acks_received.add(ack_num)
                     # if base of the window, drop
-                    while window[0] % self.max_seq_number in acks_received:
+                    while window and window[0] % self.max_seq_number in acks_received:
                         base += 1
+                        # print(f"Base: {base}. Seq: {seq_counter}")
                         window.pop(0)
+                    
+                    if base == self.num_packets:
+                        end = time.time()
+                        break
 
                 for pkt_num, pkt_timer in timers.items():
                     if pkt_timer and time.time() - pkt_timer >= self.timeout:
+                        if retransmissions[pkt_num] >= 10:
+                            print(f"Packet {pkt_num} retransmitted 10 times, receiver likely terminated")
+                            exit()
                         # seq_counter = base + 1
-                        print(f"Timing out for: {pkt_num}", file=sys.stderr)
+                        # print(f"Timing out for: {pkt_num}", file=sys.stderr)
                         self.compose_and_send_packet(pkt_num)
                         timers[pkt_num] = time.time()
+                        retransmissions[pkt_num] += 1
                 
         runtime = end - start
-        # print(runtime, fsize/1000)
         throughput = (len(self.data) / 1000) / runtime
-        print(f"{runtime}#{self.retransmissions}#{throughput}")
+        print(f"{throughput}")
 
 
-# RemoteHost, Port, Filename, Timeout
+# RemoteHost, Port, Filename, Timeout, WindowSize
 host = sys.argv[1]
 port = int(sys.argv[2])
 fname = sys.argv[3]

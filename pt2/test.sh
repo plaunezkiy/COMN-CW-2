@@ -3,15 +3,16 @@ OUTPUT_FILE="data.txt"
 # clear network settings
 sudo tc qdisc del dev lo root
 # set network settings
-sudo tc qdisc add dev lo root netem loss 5% delay 10ms rate 5mbit
+sudo tc qdisc add dev lo root netem loss 5% delay 5ms rate 10mbit
 
 RECEIVER="127.0.0.1"
 PORT=5005
 SENDER_FNAME="test.jpg"
 RECEIVER_FNAME="recv.jpg"
 
-# TIMEOUTS=(5 10 15 20 25 30 40 50 75 100)
-TIMEOUTS=(100 75 50 40 30 25 20 15 10 5)
+TIMEOUTS=(5 10 15 20 25 30 40 50 75 100)
+# TIMEOUTS=(100 75 50 40 30 25 20 15 10 5)
+# TIMEOUTS=(15 20 25)
 
 for RETRY_TIMEOUT in ${TIMEOUTS[@]}; do
     printf "${RETRY_TIMEOUT}ms\n" >> $OUTPUT_FILE

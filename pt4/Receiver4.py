@@ -34,8 +34,7 @@ class Receiver:
     def receive_file(self, filename):
         pkts_received = set()
         base = -1
-        eof = False
-        fuck = True
+        EOF = False
         # keys are seq_nums, values are packet payload
         window_buffer = {}
         with open(filename, "wb") as file:
@@ -45,32 +44,33 @@ class Receiver:
                     # parse data
                     header = data[:3]
                     seq_number = int.from_bytes(header[:2], 'big')
+                    # send ACK
+                    self.send_ack(seq_number, addr)
                     eof = bool.from_bytes(header[-1:], 'big')
+                    if eof:
+                        # if final packet has arrived, take a note - ready to terminate
+                        EOF = True
                     # in order
                     if base < seq_number <= base + self.window_size:                    
-                        print(window_buffer.keys(), file=sys.stderr)
-                        print(f"Received & Buffered: {seq_number}", file=sys.stderr)
+                        # print(window_buffer.keys(), file=sys.stderr)
+                        # print(f"Received & Buffered: {seq_number}", file=sys.stderr)
                         payload = data[3:]
-                        if seq_number != 0:
-                            fuck = False
-                        if fuck:
-                            continue
                         if seq_number not in pkts_received:
                             pkts_received.add(seq_number)
                             window_buffer[seq_number] = payload
                     # deliver data if available
                     while base + 1 in window_buffer.keys():
-                        print(f"Delivered: {base+1}", file=sys.stderr)
+                        # print(f"Delivered: {base+1}", EOF, file=sys.stderr)
                         file.write(window_buffer[base + 1])
                         del window_buffer[base + 1]
-                        base += 1                       
-                    # send ACK
-                    self.send_ack(seq_number, addr)
-                    if eof and len(window_buffer) == 0:
+                        base += 1
+                    if EOF and len(window_buffer) == 0:
+                        # in case final ack gets lost
+                        self.send_ack(seq_number, addr)
                         break
 
 
-# Port, Filename
+# Port, Filename, WindowSize
 port = int(sys.argv[1])
 fname = sys.argv[2]
 window_size = int(sys.argv[3])

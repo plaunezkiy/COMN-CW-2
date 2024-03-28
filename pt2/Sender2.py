@@ -15,9 +15,6 @@ class Sender:
         # print(f"Sending to {self.address}")
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.settimeout(retry_timeout/1000)
-        # enable immediate address reusage (for sending+receiving)
-        # self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        # self.sock.bind(self.address)
 
     def get_ack_seq_num(self, packet):
         seq_num = int.from_bytes(packet, 'big')
@@ -44,9 +41,11 @@ class Sender:
                 # wait for ACK
                 pckt, addr = self.sock.recvfrom(self.ACK_SIZE)
                 ack_no = self.get_ack_seq_num(pckt)
-                # since the original number is %'ed
+                # since the original number is %'ed, if correct:
                 if ack_no == R_SEQ_NUMBER:
                     break
+                pkt_retransmissions += 1
+                # print(f"Resend: {seq_number}") #, file=sys.stderr)
             except socket.timeout:
                 # if the final is ack is not there after 10 retries (10 x Timeout)
                 # the receiver has likely terminated, so should the sender
@@ -54,7 +53,7 @@ class Sender:
                     print("No EoF ACK received after 10 retries, terminating...", file=sys.stderr)
                     break
                 pkt_retransmissions += 1
-                # print(f"Resend: {seq_number}", file=sys.stderr)
+                # print(f"Resend: {seq_number}") #, file=sys.stderr)
                 continue
         self.retransmissions += pkt_retransmissions
     
@@ -80,9 +79,8 @@ class Sender:
                 # next chunk
                 seq_counter += 1
         runtime = end - start
-        # print(runtime, fsize/1000)
         throughput = (fsize / 1000) / runtime
-        print(f"{runtime}#{self.retransmissions}#{throughput}")
+        print(f"{self.retransmissions} {throughput}")
 
 
 # RemoteHost, Port, Filename, Timeout
