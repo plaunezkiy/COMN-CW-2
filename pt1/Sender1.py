@@ -1,6 +1,7 @@
 # Nikita Peleshatyi 2150635
 import socket
 import time
+import sys
 
 
 class Sender:
@@ -36,6 +37,10 @@ class Sender:
                 seq_counter += 1
 
 
-sender = Sender()
-sender.send_file("test.jpg")
+# RemoteHost, Port, Filename
+host = sys.argv[1]
+port = int(sys.argv[2])
+fname = sys.argv[3]
+sender = Sender(host, port)
+sender.send_file(fname)
 

@@ -1,5 +1,7 @@
 # Nikita Peleshatyi 2150635
 import socket
+import sys
+
 
 class Receiver:
     PACKET_DATA_SIZE = 1024
@@ -40,5 +42,8 @@ class Receiver:
                         break
 
 
-receiver = Receiver()
-receiver.receive_file("recv.jpg")
+# Port, Filename
+port = int(sys.argv[1])
+fname = sys.argv[2]
+receiver = Receiver(port=port)
+receiver.receive_file(fname)
